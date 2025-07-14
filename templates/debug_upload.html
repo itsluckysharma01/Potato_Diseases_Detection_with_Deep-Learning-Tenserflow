@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Upload Test - Potato Disease Detection</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            font-size: 0.95rem;
+        }
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .preview-img, .analyzed-img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .analyzed-img {
+            border: 3px solid #007bff;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                margin: 10px;
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+                border-radius: 10px;
+            }
+            .upload-area {
+                padding: 20px 10px;
+                margin: 15px 0;
+            }
+            .upload-area h3 {
+                font-size: 1.2rem;
+                margin-bottom: 8px;
+            }
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                margin: 6px auto;
+                padding: 12px 15px;
+                justify-content: center;
+            }
+            .result {
+                font-size: 0.85rem;
+                padding: 12px;
+            }
+            .preview-img, .analyzed-img {
+                max-height: 250px;
+            }
+            h1 {
+                font-size: 1.6rem;
+                text-align: center;
+            }
+            h3 {
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                margin: 5px;
+                padding: 5px;
+            }
+            .container {
+                padding: 12px;
+            }
+            .upload-area {
+                padding: 15px 8px;
+            }
+            .upload-area h3 {
+                font-size: 1.1rem;
+            }
+            .upload-area p {
+                font-size: 0.9rem;
+            }
+            .btn {
+                font-size: 0.9rem;
+                padding: 10px 12px;
+            }
+            .preview-img, .analyzed-img {
+                max-height: 200px;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+        
+        /* Touch-friendly interactions */
+        .upload-area, .btn {
+            -webkit-tap-highlight-color: rgba(0, 123, 255, 0.3);
+            touch-action: manipulation;
+        }
+        
+        /* Prevent zoom on input focus for iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            input[type="file"] {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥔 Upload Functionality Test</h1>
+        <p>This page tests the upload functionality of the Potato Disease Detection system.</p>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <h3>📁 Click here to select an image</h3>
+            <p>Or drag and drop an image file here</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+        
+        <div id="preview" style="display: none;">
+            <h3>Preview:</h3>
+            <img id="previewImg" class="preview-img" alt="Preview">
+            <br>
+            <button class="btn" onclick="uploadAndPredict()">🔬 Analyze Disease</button>
+            <button class="btn" onclick="clearSelection()" style="background: #6c757d;">🗑️ Clear</button>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div id="analyzedImage" style="display: none;">
+            <h3>Analyzed Image:</h3>
+            <img id="analyzedImg" class="analyzed-img" alt="Analyzed Image">
+        </div>
+        
+        <hr>
+        <h3>Debug Information</h3>
+        <button class="btn" onclick="checkHealth()" style="background: #28a745;">🔍 Check System Health</button>
+        <button class="btn" onclick="testUploadDir()" style="background: #ffc107; color: black;">📂 Test Upload Directory</button>
+        
+        <div id="debugResult"></div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // File input handling
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                showPreview(file);
+            }
+        });
+
+        // Drag and drop handling
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#007bff';
+            this.style.background = '#f8f9fa';
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#ccc';
+            this.style.background = 'white';
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#ccc';
+            this.style.background = 'white';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                showPreview(files[0]);
+            }
+        });
+
+        function showPreview(file) {
+            console.log('Showing preview for:', file.name, file.type, file.size);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('preview').style.display = 'block';
+                document.getElementById('result').innerHTML = '';
+                document.getElementById('analyzedImage').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearSelection() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('preview').style.display = 'none';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('analyzedImage').style.display = 'none';
+        }
+
+        async function uploadAndPredict() {
+            if (!selectedFile) {
+                showResult('Please select a file first', 'error');
+                return;
+            }
+
+            showResult('Uploading and analyzing...', 'loading');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                console.log('Sending request with file:', selectedFile.name);
+
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Prediction result:', result);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Show result
+                const resultText = `
+✅ PREDICTION SUCCESSFUL!
+
+🎯 Disease: ${result.predicted_class}
+📊 Confidence: ${result.confidence}%
+📝 Description: ${result.description}
+🕒 Timestamp: ${result.timestamp}
+
+💡 Recommendations:
+${result.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+                `;
+
+                showResult(resultText, 'success');
+
+                // Show analyzed image if available
+                if (result.image_url) {
+                    document.getElementById('analyzedImg').src = result.image_url;
+                    document.getElementById('analyzedImage').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                showResult(`❌ ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const result = await response.json();
+                
+                const healthText = `
+🏥 SYSTEM HEALTH CHECK
+
+Status: ${result.status}
+Model Loaded: ${result.model_loaded ? '✅ Yes' : '❌ No'}
+Upload Dir Exists: ${result.upload_dir_exists ? '✅ Yes' : '❌ No'}
+Upload Dir Writable: ${result.upload_dir_writable ? '✅ Yes' : '❌ No'}
+Upload Path: ${result.upload_path}
+Timestamp: ${result.timestamp}
+                `;
+                
+                showDebugResult(healthText, result.model_loaded ? 'success' : 'error');
+                
+            } catch (error) {
+                showDebugResult(`❌ Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUploadDir() {
+            try {
+                const response = await fetch('/debug/upload-test');
+                const result = await response.json();
+                
+                const testText = `
+📂 UPLOAD DIRECTORY TEST
+
+Status: ${result.status}
+Message: ${result.message}
+Path: ${result.path}
+                `;
+                
+                showDebugResult(testText, result.status === 'success' ? 'success' : 'error');
+                
+            } catch (error) {
+                showDebugResult(`❌ Upload directory test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+        }
+
+        function showDebugResult(message, type) {
+            const debugDiv = document.getElementById('debugResult');
+            debugDiv.textContent = message;
+            debugDiv.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

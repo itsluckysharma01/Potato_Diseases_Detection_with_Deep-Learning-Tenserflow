@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥔 Potato Disease Detection - Flask App</title>
+    
+    <!-- Favicon and App Icons -->
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='content/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='content/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='content/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='content/android-icon-192x192.png') }}">
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ url_for('static', filename='content/apple-icon-57x57.png') }}">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ url_for('static', filename='content/apple-icon-60x60.png') }}">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ url_for('static', filename='content/apple-icon-72x72.png') }}">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='content/apple-icon-76x76.png') }}">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='content/apple-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='content/apple-icon-120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='content/apple-icon-144x144.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='content/apple-icon-152x152.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='content/apple-icon-180x180.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='content/manifest.json') }}">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="{{ url_for('static', filename='content/ms-icon-144x144.png') }}">
+    <meta name="theme-color" content="#ffffff">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- jsPDF for client-side PDF generation fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <i class="fas fa-seedling logo-icon"></i>
+                <h1>🥔 Potato Disease Detection</h1>
+                <p>Upload an image or use your camera to detect potato diseases with AI</p>
+                {% if not model_loaded %}
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Model not loaded! Please check the model file path.
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Methods -->
+            <div class="upload-methods">
+                <div class="method-card active" id="uploadCard">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload Image</h3>
+                    <p>Select from your device</p>
+                </div>
+                <div class="method-card" id="cameraCard">
+                    <i class="fas fa-camera"></i>
+                    <h3>Use Camera</h3>
+                    <p>Take a photo directly</p>
+                </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h3>Drag & Drop your image here</h3>
+                        <p>or <span class="browse-text">click to browse</span></p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <div class="supported-formats">
+                            <small>Supported: JPG, PNG, JPEG (Max: 16MB)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="camera-section" id="cameraSection" style="display: none;">
+                <div class="camera-container">
+                    <video id="video" autoplay></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="camera-controls">
+                        <button class="btn btn-camera" id="startCamera">
+                            <i class="fas fa-video"></i> Start Camera
+                        </button>
+                        <button class="btn btn-capture" id="captureBtn" style="display: none;">
+                            <i class="fas fa-camera"></i> Capture Photo
+                        </button>
+                        <button class="btn btn-secondary" id="stopCamera" style="display: none;">
+                            <i class="fas fa-stop"></i> Stop Camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Preview -->
+            <div class="image-preview" id="imagePreview" style="display: none;">
+                <img id="previewImg" src="" alt="Preview">
+                <div class="image-actions">
+                    <button class="btn btn-predict" id="predictBtn">
+                        <i class="fas fa-brain"></i> Analyze Disease
+                    </button>
+                    <button class="btn btn-secondary" id="clearBtn">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p>🔬 Analyzing your image...</p>
+                    <small>This may take a few seconds</small>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
+                
+                <!-- Analyzed Image Display -->
+                <div class="analyzed-image" id="analyzedImageSection" style="display: none;">
+                    <h3>📸 Analyzed Image</h3>
+                    <div class="analyzed-image-container">
+                        <img id="analyzedImage" src="" alt="Analyzed Image" class="analyzed-img">
+                    </div>
+                </div>
+                
+                <!-- Primary Result -->
+                <div class="prediction-card">
+                    <div class="prediction-header">
+                        <h3>🎯 Primary Diagnosis</h3>
+                        <div class="confidence-badge" id="confidenceBadge">
+                            <span id="confidenceValue">0%</span>
+                        </div>
+                    </div>
+                    <div class="prediction-result">
+                        <div class="disease-icon" id="diseaseIcon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <div class="disease-info">
+                            <h4 id="diseaseName">Disease Name</h4>
+                            <p id="diseaseDescription">Analysis description will appear here</p>
+                            <small class="timestamp" id="timestamp"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Analysis -->
+                <div class="detailed-analysis">
+                    <h3>📊 Probability Breakdown</h3>
+                    <div class="probabilities" id="probabilities">
+                        <!-- Probability bars will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="recommendations">
+                    <h3><i class="fas fa-lightbulb"></i> Treatment Recommendations</h3>
+                    <div class="recommendation-list" id="recommendationList">
+                        <!-- Recommendations will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="result-actions">
+                    <button class="btn btn-primary" id="newAnalysisBtn">
+                        <i class="fas fa-plus"></i> New Analysis
+                    </button>
+                    <div class="download-group">
+                        <button class="btn btn-secondary" id="downloadResultBtn" title="Download PDF report with folder selection (Chrome/Edge) or to Downloads folder">
+                            <i class="fas fa-folder-open"></i> Choose Folder & Download
+                        </button>
+                        <small class="download-help">
+                            <i class="fas fa-info-circle"></i> 
+                            <span id="downloadHelp">Chrome/Edge: Choose save location | Other browsers: Downloads folder</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Lucky Sharma</p>
+            <p>&copy; 2025 Potato Disease Detection System | Powered by Flask & TensorFlow</p>
+            <div class="status-indicator">
+                {% if model_loaded %}
+                <span class="status-good"><i class="fas fa-check-circle"></i> Model Ready</span>
+                {% else %}
+                <span class="status-error"><i class="fas fa-times-circle"></i> Model Error</span>
+                {% endif %}
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
