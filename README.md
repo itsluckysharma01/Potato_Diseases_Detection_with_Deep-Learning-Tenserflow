@@ -1,4 +1,4 @@
-# 🥔 Potato Skin Disease Detection Using Deep Learning
+# 🥔 Potato Leaf Disease Detection Using Deep Learning
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://tensorflow.org/)
